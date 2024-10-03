@@ -1,15 +1,15 @@
-import { BadRequestException, Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
-import { catchError, firstValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { CreateProductDto } from 'src/common/dto/create-product.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { UpdateProductDto } from 'src/common/dto/update-product.dto';
-import { PRODUCT_SERVICE } from 'src/config';
+import { NATS_SERVICE } from 'src/config';
 
 @Controller('products')
 export class ProductsController {
   constructor(
-    @Inject(PRODUCT_SERVICE) private readonly productsClient: ClientProxy
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy
   ) { }
 
 
@@ -17,7 +17,7 @@ export class ProductsController {
   async createProduct(@Body() createProductDto: CreateProductDto) {
     try {
       const product = await firstValueFrom(
-        this.productsClient.send({ cmd: 'create_product' }, createProductDto)
+        this.client.send({ cmd: 'create_product' }, createProductDto)
       )
 
       return product
@@ -30,7 +30,7 @@ export class ProductsController {
   async findAllProducts(@Query() paginationDto: PaginationDto) {
     try {
       const products = await firstValueFrom(
-        this.productsClient.send({ cmd: 'get_products' }, paginationDto)
+        this.client.send({ cmd: 'get_products' }, paginationDto)
       );
 
       return products
@@ -46,7 +46,7 @@ export class ProductsController {
     try {
 
       const product = await firstValueFrom(
-        this.productsClient.send({ cmd: 'get_one_product' }, { id })
+        this.client.send({ cmd: 'get_one_product' }, { id })
       );
       return product;
 
@@ -62,7 +62,7 @@ export class ProductsController {
     try {
       
       const product = await firstValueFrom(
-        this.productsClient.send({ cmd: 'update_product' }, {
+        this.client.send({ cmd: 'update_product' }, {
           id,
           ...updateProductDto
         })
@@ -78,7 +78,7 @@ export class ProductsController {
   async deleteProduct(@Param('id') id: number) {
     try {
       return await firstValueFrom(
-        this.productsClient.send({ cmd: 'delete_product' }, { id })
+        this.client.send({ cmd: 'delete_product' }, { id })
       )
     } catch (error) {
       throw new RpcException(error)
